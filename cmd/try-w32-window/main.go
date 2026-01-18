@@ -7,10 +7,12 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/gonutz/w32"
+	"github.com/gonutz/w32/v2"
 )
 
 func init() {
+	syscall.NewLazyDLL("user32.dll").NewProc("SetProcessDPIAware").Call()
+
 	/**
 	 * This works!!! Fix Window Randomly stuck
 	 * calls on the beginning of main() also works
@@ -32,7 +34,6 @@ func RGB(r, g, b byte) uint32 {
 	return uint32(r) | uint32(g)<<8 | uint32(b)<<16
 }
 func main() {
-
 	instance := w32.GetModuleHandle("")
 
 	// 1. Create a Dark Brush (Dark Gray/Black)
@@ -54,7 +55,6 @@ func main() {
 
 	w32.RegisterClassEx(&wc)
 
-
 	hwnd := w32.CreateWindowEx(
 		0,
 		// w32.WS_EX_CONTROLPARENT | w32.WS_EX_APPWINDOW,
@@ -71,6 +71,7 @@ func main() {
 	setImmersiveDarkMode(hwnd)
 	// SetBackgroundColour(uintptr(hwnd), 33, 33, 33)
 	// SetBackgroundColour(uintptr(hwnd), 0, 0, 0)
+	Center(hwnd)
 	w32.ShowWindow(hwnd, 1)
 
 	var msg w32.MSG
@@ -140,4 +141,40 @@ func setClassLongPtr(hwnd uintptr, param int32, val uintptr) bool {
 		val,
 	)
 	return ret != 0
+}
+
+func Center(hwnd w32.HWND) {
+
+	// windowInfo := getWindowInfo(hwnd)
+	// frameless := false
+
+	info := getMonitorInfo(hwnd)
+	workRect := info.RcWork
+	screenMiddleW := workRect.Left + (workRect.Right-workRect.Left)/2
+	screenMiddleH := workRect.Top + (workRect.Bottom-workRect.Top)/2
+	var winRect *w32.RECT
+	// if !frameless {
+	winRect = w32.GetWindowRect(hwnd)
+	// } else {
+	// winRect = w32.GetClientRect(hwnd)
+	// }
+	winWidth := winRect.Right - winRect.Left
+	winHeight := winRect.Bottom - winRect.Top
+	windowX := screenMiddleW - (winWidth / 2)
+	windowY := screenMiddleH - (winHeight / 2)
+	w32.SetWindowPos(hwnd, w32.HWND_TOP, int(windowX), int(windowY), int(winWidth), int(winHeight), w32.SWP_NOSIZE)
+}
+
+//	func getWindowInfo(hwnd w32.HWND) *w32.WINDOWINFO {
+//		var info w32.WINDOWINFO
+//		info.CbSize = uint32(unsafe.Sizeof(info))
+//		w32.GetWindowInfo(hwnd, &info)
+//		return &info
+//	}
+func getMonitorInfo(hwnd w32.HWND) *w32.MONITORINFO {
+	currentMonitor := w32.MonitorFromWindow(hwnd, w32.MONITOR_DEFAULTTONEAREST)
+	var info w32.MONITORINFO
+	info.CbSize = uint32(unsafe.Sizeof(info))
+	w32.GetMonitorInfo(currentMonitor, &info)
+	return &info
 }
