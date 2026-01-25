@@ -17,7 +17,8 @@ import (
 )
 
 /**
- * TODO: 2026.01.18 24:25 1. resize doesn't work 2. while flickering (seem chromium itself)
+ * TODO\: 2026.01.18 24:25 1. resize doesn't work 2. while flickering (seem chromium itself)
+ * TODO\: 2026.01.25 22:51 1. resize doesn't work
  */
 
 var (
@@ -192,6 +193,9 @@ func wndProc(hwnd w32.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 		} else {
 			log.Println("oh nil")
 		}
+	case w32.WM_SIZE:
+		/* just works */
+		g_chromium.Resize()
 	case 0x02E0: /* w32.WM_DPICHANGED */
 		log.Println("w32.WM_DPICHANGED")
 	case w32.WM_NCCALCSIZE:
