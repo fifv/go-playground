@@ -25,8 +25,24 @@ var (
 	g_chromium *edge.Chromium
 )
 
+func init() {
+	syscall.NewLazyDLL("user32.dll").NewProc("SetProcessDPIAware").Call()
+
+	/**
+	 * This works!!! Fix Window Randomly stuck
+	 * calls on the beginning of main() also works
+	 */
+	runtime.LockOSThread() // This is the magic fix
+}
+
 func main() {
 	hwnd := createWindow()
+	setupChromium(hwnd)
+	runMsgLoop()
+}
+
+
+func setupChromium(hwnd w32.HWND) {
 	chromium := edge.NewChromium()
 	g_chromium = chromium
 
@@ -75,7 +91,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = settings.PutAreBrowserAcceleratorKeysEnabled(false)
+	/* this enable F12 etc. */
+	err = settings.PutAreBrowserAcceleratorKeysEnabled(true)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +104,6 @@ func main() {
 	// Setup focus event handler
 
 	// Set background colour
-	// f.WindowSetBackgroundColour(f.frontendOptions.BackgroundColour)
 	setChromiumBackground(chromium, 255, 0, 0, true)
 
 	chromium.SetGlobalPermission(edge.CoreWebView2PermissionStateAllow)
@@ -95,18 +111,6 @@ func main() {
 	// chromium.Navigate("https://google.com")
 	// chromium.Navigate("http://localhost:4173/")
 	chromium.Navigate("http://localhost:3000/")
-
-	runMsgLoop()
-}
-
-func init() {
-	syscall.NewLazyDLL("user32.dll").NewProc("SetProcessDPIAware").Call()
-
-	/**
-	 * This works!!! Fix Window Randomly stuck
-	 * calls on the beginning of main() also works
-	 */
-	runtime.LockOSThread() // This is the magic fix
 }
 
 var (
@@ -195,7 +199,9 @@ func wndProc(hwnd w32.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 		}
 	case w32.WM_SIZE:
 		/* just works */
-		g_chromium.Resize()
+		if g_chromium != nil {
+			g_chromium.Resize()
+		}
 	case 0x02E0: /* w32.WM_DPICHANGED */
 		log.Println("w32.WM_DPICHANGED")
 	case w32.WM_NCCALCSIZE:
