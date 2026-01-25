@@ -71,7 +71,8 @@ func main() {
 	setImmersiveDarkMode(hwnd)
 	// SetBackgroundColour(uintptr(hwnd), 33, 33, 33)
 	// SetBackgroundColour(uintptr(hwnd), 0, 0, 0)
-	Center(hwnd)
+	/* !!! SetWindowPos before ShowWindow also can elimiate the white flash */
+	CenterWindow(hwnd)
 	w32.ShowWindow(hwnd, 1)
 
 	var msg w32.MSG
@@ -87,11 +88,17 @@ func wndProc(hwnd w32.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case w32.WM_CREATE:
 		/* wtf it works?! */
-		w32.SetWindowPos(hwnd, w32.HWND(0), 0, 0, 0, 0, w32.SWP_NOMOVE|w32.SWP_NOSIZE|w32.SWP_NOZORDER|w32.SWP_FRAMECHANGED)
+		/* !!! you can also call SetWindowPos before ShowWindow, it also elimiate the white flash */
+		// w32.SetWindowPos(hwnd, w32.HWND(0), 0, 0, 0, 0, w32.SWP_NOMOVE|w32.SWP_NOSIZE|w32.SWP_NOZORDER|w32.SWP_FRAMECHANGED)
 		return w32.DefWindowProc(hwnd, msg, wParam, lParam)
 	case w32.WM_DESTROY:
 		w32.PostQuitMessage(0)
 		return 0
+	case w32.WM_PAINT:
+		return w32.DefWindowProc(hwnd, msg, wParam, lParam)
+	case w32.WM_ERASEBKGND:
+		return w32.DefWindowProc(hwnd, msg, wParam, lParam)
+
 	default:
 		return w32.DefWindowProc(hwnd, msg, wParam, lParam)
 	}
@@ -143,7 +150,7 @@ func setClassLongPtr(hwnd uintptr, param int32, val uintptr) bool {
 	return ret != 0
 }
 
-func Center(hwnd w32.HWND) {
+func CenterWindow(hwnd w32.HWND) {
 
 	// windowInfo := getWindowInfo(hwnd)
 	// frameless := false

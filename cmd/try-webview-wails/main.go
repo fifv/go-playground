@@ -24,7 +24,6 @@ var (
 	g_chromium *edge.Chromium
 )
 
-
 func main() {
 	hwnd := createWindow()
 	chromium := edge.NewChromium()
@@ -88,11 +87,13 @@ func main() {
 
 	// Set background colour
 	// f.WindowSetBackgroundColour(f.frontendOptions.BackgroundColour)
+	setChromiumBackground(chromium, 255, 0, 0, true)
 
 	chromium.SetGlobalPermission(edge.CoreWebView2PermissionStateAllow)
 	chromium.AddWebResourceRequestedFilter("*", edge.COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL)
 	// chromium.Navigate("https://google.com")
-	chromium.Navigate("http://localhost:4173/")
+	// chromium.Navigate("http://localhost:4173/")
+	chromium.Navigate("http://localhost:3000/")
 
 	runMsgLoop()
 }
@@ -136,7 +137,9 @@ func createWindow() w32.HWND {
 	wc.Cursor = w32.LoadCursor(0, w32.MakeIntResource(w32.IDC_ARROW))
 
 	// 2. Assign the dark brush to the background
-	wc.Background = w32.CreateSolidBrush(RGB(0, 0, 0)) /* darkBackgroundBrush */
+	// wc.Background = w32.CreateSolidBrush(RGB(0, 0, 0)) /* darkBackgroundBrush */
+	wc.Background = w32.CreateSolidBrush(RGB(33, 37, 43)) /* darkBackgroundBrush */
+	// wc.Background = w32.CreateSolidBrush(RGB(233, 0, 0)) /* darkBackgroundBrush */
 	// wc.Background = w32.COLOR_BTNFACE + 1
 	wc.ClassName = syscall.StringToUTF16Ptr(className)
 
@@ -159,7 +162,7 @@ func createWindow() w32.HWND {
 	// SetBackgroundColour(uintptr(hwnd), 33, 33, 33)
 	// SetBackgroundColour(uintptr(hwnd), 0, 0, 0)
 	Center(hwnd)
-	w32.ShowWindow(hwnd, 1)
+	// w32.ShowWindow(hwnd, 1)
 
 	return hwnd
 }
@@ -358,4 +361,34 @@ func getMonitorInfo(hwnd w32.HWND) *w32.MONITORINFO {
 	info.CbSize = uint32(unsafe.Sizeof(info))
 	w32.GetMonitorInfo(currentMonitor, &info)
 	return &info
+}
+
+/**
+ * why no effect..?
+ */
+func setChromiumBackground(chromium *edge.Chromium, r uint8, g uint8, b uint8, webviewIsTransparent bool) {
+	controller := chromium.GetController()
+	controller2 := controller.GetICoreWebView2Controller2()
+
+	backgroundCol := edge.COREWEBVIEW2_COLOR{
+		A: 255,
+		R: r,
+		G: g,
+		B: b,
+	}
+
+	// WebView2 only has 0 and 255 as valid values.
+	if backgroundCol.A > 0 && backgroundCol.A < 255 {
+		backgroundCol.A = 255
+	}
+
+	if webviewIsTransparent {
+		backgroundCol.A = 0
+	}
+
+	err := controller2.PutDefaultBackgroundColor(backgroundCol)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
