@@ -37,12 +37,12 @@ func init() {
 
 func main() {
 	hwnd := createWindow()
-	setupChromium(hwnd)
+	setupWebview(hwnd)
 	runMsgLoop()
 }
 
 
-func setupChromium(hwnd w32.HWND) {
+func setupWebview(hwnd w32.HWND) {
 	chromium := edge.NewChromium()
 	g_chromium = chromium
 
@@ -166,11 +166,14 @@ func createWindow() w32.HWND {
 	setImmersiveDarkMode(hwnd)
 	// SetBackgroundColour(uintptr(hwnd), 33, 33, 33)
 	// SetBackgroundColour(uintptr(hwnd), 0, 0, 0)
-	Center(hwnd)
+
+	CenterWindow(hwnd)
+
 	// w32.ShowWindow(hwnd, 1)
 
 	return hwnd
 }
+
 func runMsgLoop() {
 	var msg w32.MSG
 	for w32.GetMessage(&msg, 0, 0, 0) != 0 {
@@ -337,7 +340,7 @@ func setClassLongPtr(hwnd uintptr, param int32, val uintptr) bool {
 	return ret != 0
 }
 
-func Center(hwnd w32.HWND) {
+func CenterWindow(hwnd w32.HWND) {
 
 	// windowInfo := getWindowInfo(hwnd)
 	// frameless := false
