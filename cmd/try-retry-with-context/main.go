@@ -31,7 +31,7 @@ func main() {
 	 * 	1. I must use another goroutine to handle ctx.Done can call close(stopCh)
 	 * If I unblock it by close(stopCh), then ehh... I have no way to put cancel...?
 	 * 	2. or I need to wrap close(stopCh) and cancel in a function...
-	 * 
+	 *
 	 * Once cancelled, there is no way to recover, everything should shutdown
 	 * You should create a new instance from stratch
 	 */
@@ -86,7 +86,7 @@ retry_loop:
 			fmt.Println("Error, retrying...")
 		} else if err == nil {
 			/* manually cancel */
-			/* in actually environment, it may be same as error? */
+			/* in real environment, it may be same as error? */
 			fmt.Println("Manually cancelled")
 		}
 
