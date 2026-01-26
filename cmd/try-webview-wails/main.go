@@ -41,7 +41,6 @@ func main() {
 	runMsgLoop()
 }
 
-
 func setupWebview(hwnd w32.HWND) {
 	chromium := edge.NewChromium()
 	g_chromium = chromium
@@ -96,6 +95,10 @@ func setupWebview(hwnd w32.HWND) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	/* Set Default Zoom */
+	controller := chromium.GetController()
+	controller.PutZoomFactor(0.8)
 
 	// if f.debug && f.frontendOptions.Debug.OpenInspectorOnStartup {
 	// chromium.OpenDevToolsWindow()
