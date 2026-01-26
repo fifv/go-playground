@@ -17,16 +17,32 @@ import (
 )
 
 /**
- * TODO: 2026.01.18 24:25 1. resize doesn't work 2. while flickering (seem chromium itself)
+ * TODO\: 2026.01.18 24:25 1. resize doesn't work 2. while flickering (seem chromium itself)
+ * TODO\: 2026.01.25 22:51 1. resize doesn't work
  */
 
 var (
 	g_chromium *edge.Chromium
 )
 
+func init() {
+	syscall.NewLazyDLL("user32.dll").NewProc("SetProcessDPIAware").Call()
+
+	/**
+	 * This works!!! Fix Window Randomly stuck
+	 * calls on the beginning of main() also works
+	 */
+	runtime.LockOSThread() // This is the magic fix
+}
 
 func main() {
 	hwnd := createWindow()
+	setupWebview(hwnd)
+	runMsgLoop()
+}
+
+
+func setupWebview(hwnd w32.HWND) {
 	chromium := edge.NewChromium()
 	g_chromium = chromium
 
@@ -75,7 +91,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = settings.PutAreBrowserAcceleratorKeysEnabled(false)
+	/* this enable F12 etc. */
+	err = settings.PutAreBrowserAcceleratorKeysEnabled(true)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,24 +104,13 @@ func main() {
 	// Setup focus event handler
 
 	// Set background colour
-	// f.WindowSetBackgroundColour(f.frontendOptions.BackgroundColour)
+	setChromiumBackground(chromium, 255, 0, 0, true)
 
 	chromium.SetGlobalPermission(edge.CoreWebView2PermissionStateAllow)
 	chromium.AddWebResourceRequestedFilter("*", edge.COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL)
 	// chromium.Navigate("https://google.com")
-	chromium.Navigate("http://localhost:4173/")
-
-	runMsgLoop()
-}
-
-func init() {
-	syscall.NewLazyDLL("user32.dll").NewProc("SetProcessDPIAware").Call()
-
-	/**
-	 * This works!!! Fix Window Randomly stuck
-	 * calls on the beginning of main() also works
-	 */
-	runtime.LockOSThread() // This is the magic fix
+	// chromium.Navigate("http://localhost:4173/")
+	chromium.Navigate("http://localhost:3000/")
 }
 
 var (
@@ -136,7 +142,9 @@ func createWindow() w32.HWND {
 	wc.Cursor = w32.LoadCursor(0, w32.MakeIntResource(w32.IDC_ARROW))
 
 	// 2. Assign the dark brush to the background
-	wc.Background = w32.CreateSolidBrush(RGB(0, 0, 0)) /* darkBackgroundBrush */
+	// wc.Background = w32.CreateSolidBrush(RGB(0, 0, 0)) /* darkBackgroundBrush */
+	wc.Background = w32.CreateSolidBrush(RGB(33, 37, 43)) /* darkBackgroundBrush */
+	// wc.Background = w32.CreateSolidBrush(RGB(233, 0, 0)) /* darkBackgroundBrush */
 	// wc.Background = w32.COLOR_BTNFACE + 1
 	wc.ClassName = syscall.StringToUTF16Ptr(className)
 
@@ -158,11 +166,14 @@ func createWindow() w32.HWND {
 	setImmersiveDarkMode(hwnd)
 	// SetBackgroundColour(uintptr(hwnd), 33, 33, 33)
 	// SetBackgroundColour(uintptr(hwnd), 0, 0, 0)
-	Center(hwnd)
-	w32.ShowWindow(hwnd, 1)
+
+	CenterWindow(hwnd)
+
+	// w32.ShowWindow(hwnd, 1)
 
 	return hwnd
 }
+
 func runMsgLoop() {
 	var msg w32.MSG
 	for w32.GetMessage(&msg, 0, 0, 0) != 0 {
@@ -188,6 +199,11 @@ func wndProc(hwnd w32.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 			log.Println("changed!")
 		} else {
 			log.Println("oh nil")
+		}
+	case w32.WM_SIZE:
+		/* just works */
+		if g_chromium != nil {
+			g_chromium.Resize()
 		}
 	case 0x02E0: /* w32.WM_DPICHANGED */
 		log.Println("w32.WM_DPICHANGED")
@@ -324,7 +340,7 @@ func setClassLongPtr(hwnd uintptr, param int32, val uintptr) bool {
 	return ret != 0
 }
 
-func Center(hwnd w32.HWND) {
+func CenterWindow(hwnd w32.HWND) {
 
 	// windowInfo := getWindowInfo(hwnd)
 	// frameless := false
@@ -358,4 +374,34 @@ func getMonitorInfo(hwnd w32.HWND) *w32.MONITORINFO {
 	info.CbSize = uint32(unsafe.Sizeof(info))
 	w32.GetMonitorInfo(currentMonitor, &info)
 	return &info
+}
+
+/**
+ * why no effect..?
+ */
+func setChromiumBackground(chromium *edge.Chromium, r uint8, g uint8, b uint8, webviewIsTransparent bool) {
+	controller := chromium.GetController()
+	controller2 := controller.GetICoreWebView2Controller2()
+
+	backgroundCol := edge.COREWEBVIEW2_COLOR{
+		A: 255,
+		R: r,
+		G: g,
+		B: b,
+	}
+
+	// WebView2 only has 0 and 255 as valid values.
+	if backgroundCol.A > 0 && backgroundCol.A < 255 {
+		backgroundCol.A = 255
+	}
+
+	if webviewIsTransparent {
+		backgroundCol.A = 0
+	}
+
+	err := controller2.PutDefaultBackgroundColor(backgroundCol)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
