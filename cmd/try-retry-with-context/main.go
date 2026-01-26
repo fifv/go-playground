@@ -43,6 +43,7 @@ func main() {
 	 */
 	go func() {
 		<-ctx.Done()
+		fmt.Println("context done, also close the blocking operation..")
 		close(stopCh)
 	}()
 
@@ -77,7 +78,7 @@ retry_loop:
 		} else if err == nil {
 			/* manually cancel */
 			/* in actually environment, it may be same as error? */
-			fmt.Println("manually cancel")
+			fmt.Println("Manually cancelled")
 		}
 
 		/**
@@ -91,6 +92,7 @@ retry_loop:
 			/**
 			 * should i return or break?
 			 */
+			fmt.Println("Context is Done, stop retry")
 			break retry_loop
 
 		}
@@ -131,6 +133,7 @@ func tryGetchar(errCh chan<- struct{}, stopCh chan<- struct{}, cancel func()) {
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
+	fmt.Println("Press `q` to Quit, `c` to cancel the context")
 	b := make([]byte, 1)
 	for {
 		_, err = os.Stdin.Read(b)
@@ -146,7 +149,7 @@ func tryGetchar(errCh chan<- struct{}, stopCh chan<- struct{}, cancel func()) {
 			close(stopCh)
 		case "c":
 			cancel()
-		case "q":
+		case "q", "\x03": /* handle ctrl-c */
 			os.Exit(0)
 		}
 	}
