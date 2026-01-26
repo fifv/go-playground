@@ -11,6 +11,13 @@ import (
 )
 
 /**
+ * 2026.01.27 Conclusion:
+ * 1. use `context.cancel` to cancel everything
+ * 2. `Port.Read()` doesn't support cancel, so use this to close when context is done: 	`go func() { <-ctx.Done(); port.Close()}()`
+ * 3. replace `time.Sleep()` with `select { case <-time.After(time.Second) }` to make it cancelable by ctx.Done()
+ */
+
+/**
  * port.Read() simulator
  *
  * 1. an action block for unlimited time
