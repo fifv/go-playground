@@ -31,6 +31,9 @@ func main() {
 	 * 	1. I must use another goroutine to handle ctx.Done can call close(stopCh)
 	 * If I unblock it by close(stopCh), then ehh... I have no way to put cancel...?
 	 * 	2. or I need to wrap close(stopCh) and cancel in a function...
+	 * 
+	 * Once cancelled, there is no way to recover, everything should shutdown
+	 * You should create a new instance from stratch
 	 */
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -64,7 +67,13 @@ retry_loop:
 		// default:
 		// }
 
+		/**
+		 * the block operation, it only return when error occurs
+		 * while the error can be manually triggered, like port.Close()
+		 * and if port.Close() called, further call will always return error immediately
+		 */
 		err := runSomeWorkThatBlock(errCh, stopCh)
+
 		/**
 		 * two possible situations:
 		 * 1. error
