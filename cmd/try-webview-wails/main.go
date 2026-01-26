@@ -107,6 +107,7 @@ func setupWebview(hwnd w32.HWND) {
 	// Setup focus event handler
 
 	// Set background colour
+	/* no effect? */
 	setChromiumBackground(chromium, 255, 0, 0, true)
 
 	chromium.SetGlobalPermission(edge.CoreWebView2PermissionStateAllow)
