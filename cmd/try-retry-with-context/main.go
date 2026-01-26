@@ -36,9 +36,9 @@ func main() {
 	defer cancel()
 
 	/**
-	 * seems good, approved by ChatGPT, 
+	 * seems good, approved by ChatGPT,
 	 * it is a translaion between context.cancel and traditional API which doesn't support context
-	 * 
+	 *
 	 * the ownership of closer should bound to exactly one person, it's here, no elsewhere
 	 */
 	go func() {
@@ -53,7 +53,7 @@ retry_loop:
 		/**
 		 * before blocking, directly exit instead of run then error, is this approach good?
 		 * i have to check ctx.Done() twice ...
-		 * 
+		 *
 		 * maybe it is safe to ignore this
 		 * if i cancelled, the Read() should be closed, and it always returns with error immediately
 		 */
