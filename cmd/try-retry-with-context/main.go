@@ -102,6 +102,11 @@ retry_loop:
 			 * should i return or break?
 			 */
 			fmt.Println("Context is Done, stop retry")
+			/**
+			 * break the loop ~= return
+			 * because cancel the context means everything in this function is no more needed
+			 * but with break, you can do some cleanup before function exits
+			 */
 			break retry_loop
 
 		}
