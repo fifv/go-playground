@@ -8,6 +8,7 @@ import (
 
 type MyStruct struct {
 	name string
+	age int
 }
 type MyStruct2 struct {
 	name string
@@ -63,4 +64,27 @@ func main() {
 	mm["k3"] = 1
 	fmt.Println(mm == nil, mm)
 
+	/* try map is value or >pointer< */
+	mmm := map[string]int{}
+	mmm["asdf"] = 1
+	mmm2 := mmm
+	fmt.Printf("%+v\n", mmm)
+	mmm2["asdf"] = 2
+	fmt.Printf("%+v\n", mmm)
+	modifyTheMap(mmm2)
+	fmt.Printf("%+v\n", mmm)
+
+	/* compare struct */
+	cm := map[MyStruct]struct{}{}
+	cm[MyStruct{name: "Student", age: 24}] = struct{}{}
+	fmt.Printf("%+v\n", cm)
+	v, ok := cm[MyStruct{name: "Student", age: 24}]
+	fmt.Printf("%+v %+v\n", v, ok)
+
+
+
+}
+
+func modifyTheMap(theMap map[string]int)  {
+	theMap["aaa"] = 3
 }
