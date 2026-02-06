@@ -37,11 +37,11 @@ func init() {
 
 func main() {
 	hwnd := createWindow()
-	setupWebview(hwnd)
+	setupWebview(hwnd, "http://localhost:3000/", 0.8)
 	runMsgLoop()
 }
 
-func setupWebview(hwnd w32.HWND) {
+func setupWebview(hwnd w32.HWND, url string, defaultZoom float64) {
 	chromium := edge.NewChromium()
 	g_chromium = chromium
 
@@ -99,7 +99,7 @@ func setupWebview(hwnd w32.HWND) {
 
 	/* Set Default Zoom */
 	controller := chromium.GetController()
-	controller.PutZoomFactor(0.8)
+	controller.PutZoomFactor(defaultZoom)
 
 	// if f.debug && f.frontendOptions.Debug.OpenInspectorOnStartup {
 	// chromium.OpenDevToolsWindow()
@@ -115,7 +115,7 @@ func setupWebview(hwnd w32.HWND) {
 	chromium.AddWebResourceRequestedFilter("*", edge.COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL)
 	// chromium.Navigate("https://google.com")
 	// chromium.Navigate("http://localhost:4173/")
-	chromium.Navigate("http://localhost:3000/")
+	chromium.Navigate(url)
 }
 
 var (
