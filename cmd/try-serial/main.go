@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	fmt.Println("hi, 123456789123456789012312312323frfff34444444f4")
 	t1 := time.Now()
 	ports, err := serial.GetPortsList()
 	fmt.Println(time.Since(t1).Milliseconds(), "ms", "GetPortsList")
@@ -91,7 +92,7 @@ func main() {
 		fmt.Printf("<<<<<<[%v] %v\n", len(rxBuff), strconv.QuoteToASCII(string(rxBuff)))
 	}
 }
-
+//   gfosjstjust some test that the air is working.... working... asdfsdfsd
 /**
  * 
  * the "perfert" readToIdle

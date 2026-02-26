@@ -2,15 +2,29 @@ package main
 
 import (
 	// "log"
+	"fmt"
+	"log"
 	"runtime"
 	"strconv"
 	"syscall"
 	"unsafe"
 
+	"github.com/apenwarr/fixconsole"
 	"github.com/gonutz/w32/v2"
 )
 
+
+
 func init() {
+	/* Finally something works */
+	err := fixconsole.FixConsoleIfNeeded()
+	if err != nil {
+		log.Fatalf("FixConsoleOutput: %v\n", err)
+	}
+	
+	// CreateConsole()
+	// TryAttachToParentConsole()
+
 	syscall.NewLazyDLL("user32.dll").NewProc("SetProcessDPIAware").Call()
 
 	/**
@@ -34,6 +48,8 @@ func RGB(r, g, b byte) uint32 {
 	return uint32(r) | uint32(g)<<8 | uint32(b)<<16
 }
 func main() {
+	fmt.Println("Hi")
+
 	instance := w32.GetModuleHandle("")
 
 	// 1. Create a Dark Brush (Dark Gray/Black)

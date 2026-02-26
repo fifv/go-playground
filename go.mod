@@ -6,6 +6,7 @@ require github.com/jchv/go-webview2 v0.0.0-20250406165304-0bcfea011047
 
 require (
 	github.com/KarpelesLab/weak v0.1.1 // indirect
+	github.com/apenwarr/w32 v0.0.0-20190407065021-aa00fece76ab // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
@@ -28,12 +29,14 @@ require (
 )
 
 require (
+	github.com/apenwarr/fixconsole v0.0.0-20191012055117-5a9f6489cc29
 	github.com/charmbracelet/log v0.4.2
 	github.com/diamondburned/gotk4/pkg v0.3.1
 	github.com/gonutz/w32/v2 v2.12.1
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
 	github.com/mattn/go-gtk v0.0.0-20240119050609-48574e312fac
+	github.com/minux/windows v0.0.0-20150522020359-d3e6a8444504
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/wailsapp/go-webview2 v1.0.23
 	go.bug.st/serial v1.6.4
