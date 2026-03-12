@@ -19,22 +19,12 @@ type CenterPoint struct {
 }
 
 func main() {
-	conn, err := net.Dial("tcp", "localhost:8080")
+	conn, err := net.Dial("udp", "localhost:8337")
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 
-	// reader := bufio.NewReader(conn)
-	// for i := range 300 {
-	// 	message := fmt.Sprintf("Hello, server! This is message %d\n", i+1)
-	// 	conn.Write([]byte(message))
-	// 	response, err := reader.ReadString('\n')
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	log.Infof("Received from server: %s", response)
-	// }
 
 	for i := range 300 {
 		point := CenterPoint{
