@@ -72,7 +72,7 @@ func tcpClient() {
 	/**
 	 * payload size affect speed significantly, large is fast
 	 */
-	payload := make([]byte, 1<<20)
+	payload := make([]byte, 1<<10)
 
 	var wg sync.WaitGroup
 	t1 := time.Now()
