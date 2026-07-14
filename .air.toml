@@ -1,56 +1,86 @@
 #:schema https://json.schemastore.org/any.json
 
-root = "."
+root         = "."
 testdata_dir = "testdata"
-tmp_dir = "tmp"
+tmp_dir      = "tmp"
+
+### Fifv: what a confusing config... there ONLY one delay that actually has effect: `delay` 
+### kill_delay doesn't work on windows, rerun_delay has no effect at all, poll is disabled
+### if delay is 0, default to 500ms
 
 [build]
-  args_bin = []
-  bin = "tmp\\main.exe"
-  cmd = "go build -o ./tmp/main.exe ./cmd/try-serial"
-  delay = 200
-  entrypoint = ["tmp\\main.exe"]
-  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
-  exclude_file = []
-  exclude_regex = ["_test.go"]
-  exclude_unchanged = false
-  follow_symlink = false
-  full_bin = ""
-  include_dir = []
-  include_ext = ["go", "tpl", "tmpl", "html"]
-  include_file = []
-  kill_delay = 2
-  log = "build-errors.log"
-  poll = false
-  poll_interval = 1
-  post_cmd = []
-  pre_cmd = []
-  rerun = false
-  rerun_delay = 400
-  send_interrupt = false
-  stop_on_error = true
+# Array of commands to run before each build
+pre_cmd = []
+# Just plain old shell command. You could use `make` as well.
+cmd = "go build -o ./tmp/main.exe ./cmd/try-serial"
+# Array of commands to run after ^C
+post_cmd = []
+
+# Entrypoint binary relative to root. First item is the executable, more items are default arguments.
+entrypoint = ["./tmp/main.exe"]
+
+# Watch these filename extensions. Use ["*"] to watch all file extensions.
+include_ext = ["go", "tpl", "tmpl", "html"]
+# Watch these directories if you specified.
+include_dir = ["./cmd/try-serial"]
+# Watch these files.
+include_file = []
+
+# Ignore these filename extensions or directories.
+exclude_dir = ["assets", "tmp", "vendor", "frontend/node_modules", "**/tmp"]
+# Exclude files.
+exclude_file = []
+# Exclude specific regular expressions.
+exclude_regex = ["_test\\.go"]
+# Exclude unchanged files.
+exclude_unchanged = true
+
+# Ignore dangerous root directory that could cause excessive file watching
+ignore_dangerous_root_dir = false
+# Follow symlink for directories
+follow_symlink = true
+# This log file is placed in your tmp_dir.
+log = "air.log"
+# Poll files for changes instead of using fsnotify.
+poll = false
+# Poll interval (defaults to the minimum interval of 500ms).
+poll_interval = 500 # ms
+# It's not necessary to trigger build each time file changes if it's too frequent.
+delay = 500 # ms
+# Stop running old binary when build errors occur.
+stop_on_error = true
+# Send Interrupt signal before killing process (ignored on Windows; uses TASKKILL)
+send_interrupt = false
+# Delay after sending Interrupt signal
+kill_delay = 10000000000000 # nanosecond
+
+# Fifv: seems no effect at all (i even add print to source code and comfirm that)
+# Rerun binary or not
+rerun = false
+# Delay after each execution
+rerun_delay = 2000
 
 [color]
-  app = ""
-  build = "yellow"
-  main = "magenta"
-  runner = "green"
-  watcher = "cyan"
+app     = ""
+build   = "yellow"
+main    = "magenta"
+runner  = "green"
+watcher = "cyan"
 
 [log]
-  main_only = false
-  silent = false
-  time = true
+main_only = false
+silent    = false
+time      = true
 
 [misc]
-  clean_on_exit = false
+clean_on_exit = false
 
 [proxy]
-  app_port = 0
-  app_start_timeout = 0
-  enabled = false
-  proxy_port = 0
+app_port          = 0
+app_start_timeout = 0
+enabled           = false
+proxy_port        = 0
 
 [screen]
-  clear_on_rebuild = false
-  keep_scroll = true
+clear_on_rebuild = false
+keep_scroll      = true

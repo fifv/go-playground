@@ -18,6 +18,7 @@ func main() {
 	go doneIt(doneCh)
 	<-doneCh
 	close(doneCh)
+	closeIt(doneCh)
 	fmt.Println("Done!")
 	time.Sleep(time.Second)
 }
@@ -28,4 +29,8 @@ func doneIt(doneCh chan int) {
 	doneCh <- 1
 	fmt.Println("Write To Done!")
 
+}
+
+func closeIt(doneCh chan<- int)  {
+	close(doneCh)
 }

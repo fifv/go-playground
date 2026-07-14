@@ -220,6 +220,11 @@ func wndProc(hwnd w32.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 		} else {
 			log.Println("oh nil")
 		}
+	case w32.WM_SETFOCUS:
+		log.Println("focused!")
+		if g_chromium != nil {
+			g_chromium.Focus()
+		}
 	case w32.WM_SIZE:
 		/* just works */
 		if g_chromium != nil {
