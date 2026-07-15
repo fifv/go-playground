@@ -8,6 +8,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/samber/lo"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -102,21 +103,19 @@ func handleWebSocket(clients map[*websocket.Conn]struct{}, clientsMu *sync.RWMut
 }
 
 func constructWsComMessage(data []byte) ([]byte, error) {
-	integerData := make([]int, len(data))
-	for i, value := range data {
-		integerData[i] = int(value)
+	integerData := lo.Map(data, func(x byte, _ int) int { return int(x) })
+
+	type WsComMessageData struct {
+		Payload []int `json:"payload"`
+	}
+	type WsComMessage struct {
+		Event string           `json:"event"`
+		Data  WsComMessageData `json:"data"`
 	}
 
-	payload, err := json.Marshal(struct {
-		Event string `json:"event"`
-		Data  struct {
-			Payload []int `json:"payload"`
-		} `json:"data"`
-	}{
+	payload, err := json.Marshal(WsComMessage{
 		Event: "com-rx",
-		Data: struct {
-			Payload []int `json:"payload"`
-		}{
+		Data: WsComMessageData{
 			Payload: integerData,
 		},
 	})

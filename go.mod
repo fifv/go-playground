@@ -28,7 +28,8 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 )
 
 require (
@@ -38,6 +39,7 @@ require (
 	github.com/gonutz/w32/v2 v2.12.1
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
+	github.com/samber/lo v1.53.0
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	github.com/wailsapp/go-webview2 v1.0.23
 	go.bug.st/serial v1.6.4
