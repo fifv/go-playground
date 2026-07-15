@@ -8,12 +8,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 
 	"github.com/go-ole/go-ole"
 	"github.com/gorilla/websocket"
@@ -21,9 +25,6 @@ import (
 )
 
 var (
-	clientsMu sync.Mutex
-	clients   = make(map[*websocket.Conn]struct{})
-
 	upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -32,47 +33,75 @@ var (
 )
 
 func main() {
-	http.HandleFunc("/wscom", handleWebSocket)
+	var clientsMu sync.RWMutex
+	clients := make(map[*websocket.Conn]struct{})
+
+	http.HandleFunc("/wscom", handleWebSocket(clients, &clientsMu))
+
+	payloadCh := make(chan []byte, 32)
 
 	go func() {
-		if err := captureLoopback(broadcast); err != nil {
+		for {
+			payload := <-payloadCh
+
+			clientsMu.RLock()
+			for conn := range clients {
+				if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+					_ = conn.Close()
+					delete(clients, conn)
+				}
+			}
+			clientsMu.RUnlock()
+		}
+	}()
+	go func() {
+		if err := captureLoopback(func(payload []byte) {
+			msg, err := constructWsComMessage(payload)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			payloadCh <- msg
+		}); err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-	log.Println("WebSocket: ws://127.0.0.1:3304/wscom")
+	log.Info("WebSocket: ws://127.0.0.1:3304/wscom")
 	log.Fatal(http.ListenAndServe("127.0.0.1:3304", nil))
 }
 
-func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("WebSocket upgrade:", err)
-		return
-	}
-
-	clientsMu.Lock()
-	clients[conn] = struct{}{}
-	clientsMu.Unlock()
-
-	log.Println("connected:", conn.RemoteAddr())
-
-	// Wait for disconnect.
-	for {
-		if _, _, err := conn.ReadMessage(); err != nil {
-			break
+func handleWebSocket(clients map[*websocket.Conn]struct{}, clientsMu *sync.RWMutex) http.HandlerFunc {
+	return func(writer http.ResponseWriter, req *http.Request) {
+		conn, err := upgrader.Upgrade(writer, req, nil)
+		if err != nil {
+			log.Debug("WebSocket upgrade:", err)
+			return
 		}
+
+		clientsMu.Lock()
+		clients[conn] = struct{}{}
+		clientsMu.Unlock()
+
+		log.Debugf("connected: %v", conn.RemoteAddr())
+
+		// Wait for disconnect.
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				break
+			}
+		}
+
+		clientsMu.Lock()
+		delete(clients, conn)
+		clientsMu.Unlock()
+
+		_ = conn.Close()
+		log.Debugf("disconnected: %v", conn.RemoteAddr())
 	}
-
-	clientsMu.Lock()
-	delete(clients, conn)
-	clientsMu.Unlock()
-
-	_ = conn.Close()
-	log.Println("disconnected:", conn.RemoteAddr())
 }
 
-func broadcast(data []byte) {
+func constructWsComMessage(data []byte) ([]byte, error) {
 	integerData := make([]int, len(data))
 	for i, value := range data {
 		integerData[i] = int(value)
@@ -92,19 +121,11 @@ func broadcast(data []byte) {
 		},
 	})
 	if err != nil {
-		log.Println("encode WebSocket message:", err)
-		return
+		log.Debug("encode WebSocket message:", err)
+		return nil, err
 	}
 
-	clientsMu.Lock()
-	defer clientsMu.Unlock()
-
-	for conn := range clients {
-		if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
-			_ = conn.Close()
-			delete(clients, conn)
-		}
-	}
+	return payload, nil
 }
 
 func captureLoopback(output func([]byte)) error {
@@ -160,7 +181,7 @@ func captureLoopback(output func([]byte)) error {
 	}
 	defer ole.CoTaskMemFree(uintptr(unsafe.Pointer(format)))
 
-	log.Printf(
+	log.Infof(
 		"audio: %d Hz, %d channels, %d bits, block=%d bytes",
 		format.NSamplesPerSec,
 		format.NChannels,
@@ -204,7 +225,7 @@ func captureLoopback(output func([]byte)) error {
 	}
 	defer audioClient.Stop()
 
-	log.Println("WASAPI loopback capture started")
+	log.Info("WASAPI loopback capture started")
 
 	for {
 		var packetFrames uint32
@@ -267,4 +288,18 @@ func captureLoopback(output func([]byte)) error {
 			}
 		}
 	}
+}
+
+func init() {
+	log.SetReportCaller(true)
+	log.SetLevel(log.DebugLevel)
+	log.SetCallerFormatter(func(file string, line int, fn string) string {
+		cwd, _ := os.Getwd()
+		rel, _ := filepath.Rel(cwd, file)
+		return fmt.Sprintf("%s:%d", rel, line)
+	})
+	styles := log.DefaultStyles()
+	styles.Timestamp = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("242")) /* dark grey */
+	log.SetStyles(styles)
 }
