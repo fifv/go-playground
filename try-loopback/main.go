@@ -103,8 +103,6 @@ func handleWebSocket(clients map[*websocket.Conn]struct{}, clientsMu *sync.RWMut
 }
 
 func constructWsComMessage(data []byte) ([]byte, error) {
-	integerData := lo.Map(data, func(x byte, _ int) int { return int(x) })
-
 	type WsComMessageData struct {
 		Payload []int `json:"payload"`
 	}
@@ -116,7 +114,7 @@ func constructWsComMessage(data []byte) ([]byte, error) {
 	payload, err := json.Marshal(WsComMessage{
 		Event: "com-rx",
 		Data: WsComMessageData{
-			Payload: integerData,
+			Payload: lo.Map(data, func(x byte, _ int) int { return int(x) }),
 		},
 	})
 	if err != nil {

@@ -20,6 +20,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/go-zeromq/goczmq/v4 v4.2.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -36,6 +37,7 @@ require (
 	github.com/apenwarr/fixconsole v0.0.0-20191012055117-5a9f6489cc29
 	github.com/charmbracelet/log v0.4.2
 	github.com/diamondburned/gotk4/pkg v0.3.1
+	github.com/go-zeromq/zmq4 v0.17.0
 	github.com/gonutz/w32/v2 v2.12.1
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
