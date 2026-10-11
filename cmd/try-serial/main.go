@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"runtime"
+
 	"strconv"
+	"strings"
 	"time"
 
 	"go.bug.st/serial"
@@ -32,7 +36,7 @@ func main() {
 		}
 		if len(ports) == 0 {
 			fmt.Println("No serial ports found!")
-			return
+			// return
 		}
 		for _, port := range ports {
 			fmt.Printf("Found port: %s\n", port.Name)
@@ -44,12 +48,25 @@ func main() {
 		}
 	}
 
+	comPath := "COM4"
+	baudRate := 921600
+	if len(os.Args) >= 2 {
+		comPath = os.Args[1]
+	}
+	if len(os.Args) >= 3 {
+		baudRate, err = strconv.Atoi(os.Args[2])
+		if err != nil {
+			panic("wrong arg 2, should be baudRate: int")
+		}
+	}
+
+	fmt.Println("--------------------")
 	var port serial.Port
 	for {
 		// port, err = serial.Open("COM21", &serial.Mode{BaudRate: 115200})
 		/* by default, DTR and RTS are true, but the apollo board connect RTS to BOOT0, set to true will make it reset into flash mode... */
-		port, err = serial.Open("COM4", &serial.Mode{
-			BaudRate:          921600,
+		port, err = serial.Open(comPath, &serial.Mode{
+			BaudRate:          baudRate,
 			InitialStatusBits: &serial.ModemOutputBits{DTR: false, RTS: false},
 		})
 		if err != nil {
@@ -60,12 +77,26 @@ func main() {
 		}
 		time.Sleep(time.Millisecond * 300)
 	}
+	fmt.Println("--------------------")
 
-	// n, err := port.Write([]byte("fasdfa"))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Printf("Sent %v bytes\n", n)
+	if len(os.Args) >= 4 {
+		txBuff := make([]byte, 0, len(os.Args)-3)
+		for _, arg := range os.Args[3:] {
+			byteArg := strings.TrimPrefix(strings.TrimPrefix(arg, "0x"), "0X")
+			v, err := strconv.ParseUint(byteArg, 16, 8)
+			if err != nil {
+				log.Fatalf("wrong data byte %q, should be hex byte like AA or 55", arg)
+			}
+			txBuff = append(txBuff, byte(v))
+		}
+
+		n, err := WriteAllSerialPort(port, txBuff)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Sent %v bytes: % x\n", n, txBuff)
+		return
+	}
 
 	for {
 		// buff := make([]byte, 2048)
@@ -95,8 +126,24 @@ func main() {
 			fmt.Println("\nEOF")
 			break
 		}
-		fmt.Printf("<<<<<<[%v] %v\n", len(rxBuff), strconv.QuoteToASCII(string(rxBuff)))
+		// fmt.Printf("<<<<<<[%v] %v\n", len(rxBuff), strconv.QuoteToASCII(string(rxBuff)))
+		fmt.Printf("<<<<<<[%v] %v\n", len(rxBuff), fmt.Sprintf("% x", rxBuff))
 	}
+}
+
+func WriteAllSerialPort(port serial.Port, buff []byte) (int, error) {
+	total := 0
+	for total < len(buff) {
+		n, err := port.Write(buff[total:])
+		total += n
+		if err != nil {
+			return total, err
+		}
+		if n == 0 {
+			return total, fmt.Errorf("serial write made no progress after %d/%d bytes", total, len(buff))
+		}
+	}
+	return total, nil
 }
 
 //   gfosjstjust some test that the air is working.... working... asdfsdfsd
@@ -120,7 +167,6 @@ func ReadSerialPortToIdle(port serial.Port) ([]byte, error) {
 		if err := port.SetReadTimeout(serial.NoTimeout); err != nil {
 			return nil, err
 		}
-		// fmt.Println("before read")
 		readCount, err := port.Read(tmpReadBuf)
 		// fmt.Println("after read", readCount, err)
 		/* here n==0 may means EOF?  */
@@ -132,8 +178,11 @@ func ReadSerialPortToIdle(port serial.Port) ([]byte, error) {
 
 	/* all next reads, until idle (i.e. timeout) */
 	/* if timeout, will got n==0, err==nil */
-	/* what happened and when??? SetReadTimeout round to .Millisecond() on windows, which makes 10us -> 0 and stuck ...?? */
-	if err := port.SetReadTimeout(time.Millisecond * 1); err != nil {
+	timeout := 10 * time.Microsecond
+	if runtime.GOOS == "windows" {
+		timeout = time.Millisecond
+	}
+	if err := port.SetReadTimeout(timeout); err != nil {
 		return nil, err
 	}
 	for {

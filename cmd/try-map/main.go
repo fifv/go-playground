@@ -16,4 +16,15 @@ func main() {
 	}
 
 	fmt.Println(mm)
+	
+	passMap(mm)
+	fmt.Println(mm)
+
+}
+
+/**
+ * yes, like js, map itself is a pointer
+ */
+func passMap(theMap map[string]int)  {
+	theMap["frommap"] = 69
 }
