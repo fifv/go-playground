@@ -14,7 +14,7 @@ func main() {
 	fmt.Println("hi, 123456789123456789012312312323frfff34444444f4")
 	t1 := time.Now()
 	ports, err := serial.GetPortsList()
-	fmt.Println(time.Since(t1).Milliseconds(), "ms", "GetPortsList")
+	fmt.Println(time.Since(t1).Milliseconds(), "ms", "---------- GetPortsList ----------")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,7 +23,10 @@ func main() {
 	}
 
 	{
+
+		t1 := time.Now()
 		ports, err := enumerator.GetDetailedPortsList()
+		fmt.Println(time.Since(t1).Milliseconds(), "ms", "---------- GetDetailedPortsList ----------")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -43,13 +46,16 @@ func main() {
 
 	var port serial.Port
 	for {
-		port, err = serial.Open("COM21", &serial.Mode{BaudRate: 115200})
-		// port, err = serial.Open("COM5", &serial.Mode{BaudRate: 921600})
+		// port, err = serial.Open("COM21", &serial.Mode{BaudRate: 115200})
+		/* by default, DTR and RTS are true, but the apollo board connect RTS to BOOT0, set to true will make it reset into flash mode... */
+		port, err = serial.Open("COM4", &serial.Mode{
+			BaudRate:          921600,
+			InitialStatusBits: &serial.ModemOutputBits{DTR: false, RTS: false},
+		})
 		if err != nil {
 			log.Println(err)
 		} else {
-			fmt.Println("Connected To COM  ")
-
+			fmt.Println("---------- Connected To COM  ----------")
 			break
 		}
 		time.Sleep(time.Millisecond * 300)
@@ -92,14 +98,16 @@ func main() {
 		fmt.Printf("<<<<<<[%v] %v\n", len(rxBuff), strconv.QuoteToASCII(string(rxBuff)))
 	}
 }
+
 //   gfosjstjust some test that the air is working.... working... asdfsdfsd
+
 /**
- * 
+ *
  * the "perfert" readToIdle
  * 1. abuse allocations, so arbitary number of bytes is okay, with beautiful allocated []byte as result
  * 2. no poll, block until data come
  * 3. win32 will return only 1 byte on waking, and if data exceeds readBuf, multiple Read() with timeout is used
- * 
+ *
  * by @Fifv
  */
 func ReadSerialPortToIdle(port serial.Port) ([]byte, error) {
@@ -109,8 +117,12 @@ func ReadSerialPortToIdle(port serial.Port) ([]byte, error) {
 	/* first read, with block */
 	{
 		/* block, until first bytes come */
-		port.SetReadTimeout(-1)
+		if err := port.SetReadTimeout(serial.NoTimeout); err != nil {
+			return nil, err
+		}
+		// fmt.Println("before read")
 		readCount, err := port.Read(tmpReadBuf)
+		// fmt.Println("after read", readCount, err)
 		/* here n==0 may means EOF?  */
 		if err != nil || readCount == 0 {
 			return nil, err
@@ -120,9 +132,14 @@ func ReadSerialPortToIdle(port serial.Port) ([]byte, error) {
 
 	/* all next reads, until idle (i.e. timeout) */
 	/* if timeout, will got n==0, err==nil */
-	port.SetReadTimeout(time.Microsecond * 10)
+	/* what happened and when??? SetReadTimeout round to .Millisecond() on windows, which makes 10us -> 0 and stuck ...?? */
+	if err := port.SetReadTimeout(time.Millisecond * 1); err != nil {
+		return nil, err
+	}
 	for {
+		// fmt.Println("before read2")
 		readCount, err := port.Read(tmpReadBuf)
+		// fmt.Println("after read2", readCount, err)
 		if err != nil {
 			return nil, err
 		}
