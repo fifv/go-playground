@@ -46,7 +46,9 @@ perceived loudness also depends on the selected range and output device.
 During playback, **Enter** or **Ctrl+C** stops. **Up/Down arrows** raise/lower
 volume on all selected devices by **0.1 dB** per press; holding a key repeats.
 **Alt+Up/Down** adjusts by **1 dB**. **Space** pauses/resumes all outputs without
-resetting the noise stream. Holding Space toggles once until you release it.
+resetting the noise generator. If the volume changes while paused, stale queued
+audio is discarded and refilled at the new level before resuming. Holding Space
+toggles once until you release it.
 The PLAYING/PAUSED status appears beside the volume. A duration timer continues
 counting while paused.
 The live display shows percentage and gain in dB, calculated as

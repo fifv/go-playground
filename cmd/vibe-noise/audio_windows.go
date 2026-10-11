@@ -66,6 +66,7 @@ type outputDevice struct {
 type audioBuffer struct {
 	header   waveHeader
 	samples  []int16
+	volume   float64
 	pin      runtime.Pinner
 	prepared bool
 }
@@ -145,7 +146,48 @@ func openPlayer(device outputDevice, o options, seed uint64) (_ *player, err err
 
 func (p *player) write(b *audioBuffer) error {
 	p.generator.fill(b.samples)
+	b.volume = p.generator.volume
 	return mmCall(waveOutWrite, p.handle, uintptr(unsafe.Pointer(&b.header)), unsafe.Sizeof(b.header))
+}
+
+// prepareResume runs while paused. A queued block already contains its gain,
+// so changing the generator alone cannot change what WinMM plays on resume.
+func (p *player) prepareResume() error {
+	stale := false
+	for _, b := range p.buffers {
+		if b.header.Flags&whdrDone == 0 && b.volume != p.generator.volume {
+			stale = true
+			break
+		}
+	}
+	if !stale {
+		return nil
+	}
+	// Reset returns ownership of every queued buffer. Pause again before
+	// writing, since the first write after reset would otherwise start audio.
+	if err := mmCall(waveOutReset, p.handle); err != nil {
+		return err
+	}
+	if err := mmCall(waveOutPause, p.handle); err != nil {
+		return err
+	}
+	p.nextBuffer = 0
+	for _, b := range p.buffers {
+		if err := p.write(b); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *player) setPaused(paused bool) error {
+	if paused {
+		return mmCall(waveOutPause, p.handle)
+	}
+	if err := p.prepareResume(); err != nil {
+		return err
+	}
+	return mmCall(waveOutRestart, p.handle)
 }
 
 func (p *player) refill() error {
@@ -271,11 +313,7 @@ func play(ctx context.Context, o options) (err error) {
 				if event.togglePause {
 					paused = !paused
 					for _, p := range players {
-						proc := waveOutRestart
-						if paused {
-							proc = waveOutPause
-						}
-						if err := mmCall(proc, p.handle); err != nil {
+						if err := p.setPaused(paused); err != nil {
 							return fmt.Errorf("change playback state for %s: %w", p.device.name, err)
 						}
 					}
